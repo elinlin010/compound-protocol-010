@@ -47,7 +47,7 @@ contract MyChainLinkPriceOracle is PriceOracle {
     function _getPriceFromChainlink(address datafeed) public view returns (uint256) {
         (, int256 price, , , ) = AggregatorV3Interface(datafeed).latestRoundData();
         require(price > 0, "invalid price");
-        return uint256(price);
+        return uint256(price) * 10**10;
     }
 
     /**
