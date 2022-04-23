@@ -58,11 +58,11 @@ async function main() {
   const InterestModel = await hre.ethers.getContractFactory("JumpRateModelV2");
   const interestModel = await InterestModel.deploy(0, 2102400, ethers.utils.parseEther("0.2"), ethers.utils.parseEther("0.8"), admin.address);
   await interestModel.deployed();
-  console.log(`interestModel address: ${comptroller.address}`);
+  console.log(`interestModel address: ${interestModel.address}`);
 
   // Deploy CETH
   const CETH = await hre.ethers.getContractFactory("CEther");
-  const cEth = await CETH.deploy(unitroller.address, interestModel.address, 1, "Compound ETH", "cETH", 8, admin.address);
+  const cEth = await CETH.deploy(unitroller.address, interestModel.address, ethers.utils.parseEther("1"), "Compound ETH", "cETH", 8, admin.address);
   await cEth.deployed();
   console.log('cETH address', cEth.address);
 

@@ -85,7 +85,6 @@ async function main() {
   // Deploy Test CErc20Token Delegate
   const CTTDelegate = await hre.ethers.getContractFactory("CErc20Delegate");
   const cttDelegate = await CTTDelegate.deploy();
-
   await cttDelegate.deployed();
 
   console.log(`CTT Delegate deployed: ${cttDelegate.address}`)
@@ -93,13 +92,13 @@ async function main() {
   // Deploy Test CErc20Token Delegator, the entry point for delegate
   const CTTDelegator = await hre.ethers.getContractFactory("CErc20Delegator");
   const cttDelegator = await CTTDelegator.deploy(testToken.address, unitroller.address, ttInterestRateModel.address,
-    ethers.utils.parseEther("50"), "CTestToken", "CTT", 8, admin.address, cttDelegate.address, 0x0);
+    ethers.utils.parseEther("1"), "CTestToken", "CTT", 8, admin.address, cttDelegate.address, 0x0);
   await cttDelegator.deployed();
 
   console.log(`CTT Delegator deployed: ${cttDelegator.address}`)
 
   // Set CTT Price in Oracle for test
-  tx = await simplePriceOracle.setUnderlyingPrice(cttDelegator.address, 1)
+  tx = await simplePriceOracle.setUnderlyingPrice(cttDelegator.address, ethers.utils.parseEther(1))
   await tx.wait()
 
   console.log(`CTT price set`)
@@ -158,7 +157,7 @@ async function main() {
   console.log(`CT2T Delegator deployed: ${ct2tDelegator.address}`)
 
   // Set CT2T Price in Oracle for test
-  tx = await simplePriceOracle.setUnderlyingPrice(ct2tDelegator.address, 2)
+  tx = await simplePriceOracle.setUnderlyingPrice(ct2tDelegator.address, ethers.utils.parseEther("2"))
   await tx.wait()
 
   console.log(`CT2T price set`)
@@ -190,22 +189,3 @@ main()
     console.error(error);
     process.exit(1);
   });
-
-/* Rinkeby
-comptroller: 0xCd307FFd9d7a99AE71655F5CAd4065FE02c20552
-unitroller: 0x66967F9EC2f58D11FeaAA2f9EB2C81beCd6A7371
-price oracle: 0x5f2dB370D1aDd32E9793B1429c1695590B0735a7
-Test token deployed: 0xDf8Bf5782aB14846807feE47d986ACe4F525fD3C
-Test Token interest model: 0xA3212F5E289021a0c1de9AC53611b170d7862c0f
-CTT Delegate deployed: 0xa712382825cAc6fAbD4e9BAF4533DD29FE0DF602
-CTT Delegator deployed: 0xE373189a7BA9FB836b2dd751C897022Cd7C545e0
-Test token deployed: 0x66CbE301B5d3b8B5a065156CC12B653c3455996E
-Test2 Token interest model: 0x559d94bDC7165E44D585D85682dd48DEf90fEc82
-CT2T Delegate deployed: 0xc5F976Cb46ac6bcFf223649426C88Fec48e5cE94
-*/
-
-/*Goerli
-comptroller: 0xC26a2243C1f61e32834cd8224323A78422079332
-unitroller: 0x45998011708B244072cfdd5586587Dd7AA440016
-set comptroller
-*/
