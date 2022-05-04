@@ -24,12 +24,16 @@ async function main() {
   console.log("==================== Comptroller Settings ====================")
 
   let comptroller = await ethers.getContractAt("Comptroller", process.env.KOVAN_COMPTROLLER_ADDR);
-  const unitroller = await ethers.getContractAt("Unitroller", process.env.KOVAN_UNITROLLER_ADDR);
-  comptroller = comptroller.attach(unitroller.address)
+  // const unitroller = await ethers.getContractAt("Unitroller", process.env.KOVAN_UNITROLLER_ADDR);
+  // comptroller = comptroller.attach(unitroller.address)
   console.log(`comptroller setup: ${comptroller.address}`)
 
-  const simplePriceOracle = await ethers.getContractAt("SimplePriceOracle", process.env.KOVAN_PRICEORACLE_ADDR);
-  console.log(`Price Oracle contracts: ${simplePriceOracle.address}`)
+  // const simplePriceOracle = await ethers.getContractAt("SimplePriceOracle", process.env.KOVAN_PRICEORACLE_ADDR);
+  // console.log(`Price Oracle contracts: ${simplePriceOracle.address}`)
+
+  // tx = await comptroller._setPriceOracle(simplePriceOracle.address);
+  // await tx.wait();
+  // console.log(`set price oracle`);
 
   console.log("\n==================== CUSDC Market ====================")
   const cUsdc = await hre.ethers.getContractAt("CErc20Delegator", process.env.KOVAN_CUSDC_ADDR_COMP);
@@ -50,11 +54,11 @@ async function main() {
   console.log("total supply:", cUsdcTotalSupply.toString());
   console.log("current cash:", cUsdcCash.toString());
 
-  console.log("\n==================== Manual setting up price ====================")
-  tx = await simplePriceOracle.setUnderlyingPrice(cUsdc.address, ethers.utils.parseEther("2"));
-  await tx.wait();
-  let usdcPrice = await simplePriceOracle.getUnderlyingPrice(cUsdc.address);
-  console.log(`USDC/USD Price: ${usdcPrice/(10**18)}`);
+  // console.log("\n==================== Manual setting up price ====================")
+  // tx = await simplePriceOracle.setUnderlyingPrice(cUsdc.address, ethers.utils.parseEther("2"));
+  // await tx.wait();
+  // let usdcPrice = await simplePriceOracle.getUnderlyingPrice(cUsdc.address);
+  // console.log(`USDC/USD Price: ${usdcPrice/(10**18)}`);
 
   console.log("\n==================== Approve USDC  ====================")
   const usdcAddress = await cUsdc.underlying();
@@ -71,12 +75,12 @@ async function main() {
   console.log(`Approve Usdc`)
 
   console.log("\n==================== Enter & Mint USDC 200  ====================")
-  tx = await comptroller.enterMarkets([cUsdc.address])
-  await tx.wait()
+  // tx = await comptroller.enterMarkets([cUsdc.address])
+  // await tx.wait()
 
-  tx = await cUsdc.mint(BigNumber.from(200000000), {gasLimit: 1000000})
-  await tx.wait()
-  console.log(`mint cUsdc`)
+  // tx = await cUsdc.mint(BigNumber.from(200000000), {gasLimit: 1000000})
+  // await tx.wait()
+  // console.log(`mint cUsdc`)
   
   cUsdcBalance = await cUsdc.callStatic.balanceOf(admin.address)
   console.log("Entered CUSDC, CUSDC balance: ", cUsdcBalance.toString());
@@ -85,7 +89,7 @@ async function main() {
   console.log(`latest shortfall: ${liquidity[2]}`);
 
   console.log("\n==================== Borrow USDC 150 ====================")
-  tx = await cUsdc.borrow(BigNumber.from(150000000), {gasLimit: 1000000});
+  tx = await cUsdc.borrow(BigNumber.from(5000000), {gasLimit: 1000000});
   await tx.wait()
   let cUsdcAccountSnapshot = await cUsdc.callStatic.getAccountSnapshot(admin.address)
   console.log(`cUsdc Balance: ${cUsdcAccountSnapshot[1]}`);
@@ -95,14 +99,14 @@ async function main() {
   console.log(`latest liquidity: ${liquidity[1]}`);
   console.log(`latest shortfall: ${liquidity[2]}`);
 
-  console.log("\n==================== USDC price drop ====================")
-  tx = await simplePriceOracle.setUnderlyingPrice(cUsdc.address, ethers.utils.parseEther("1"));
-  await tx.wait();
-  usdcPrice = await simplePriceOracle.getUnderlyingPrice(cUsdc.address);
-  console.log(`USDC/USD Price: ${usdcPrice/(10**18)}`);
-  liquidity = await comptroller.callStatic.getAccountLiquidity(admin.address);
-  console.log(`latest liquidity: ${liquidity[1]}`);
-  console.log(`latest shortfall: ${liquidity[2]}`);
+  // console.log("\n==================== USDC price drop ====================")
+  // tx = await simplePriceOracle.setUnderlyingPrice(cUsdc.address, ethers.utils.parseEther("1"));
+  // await tx.wait();
+  // usdcPrice = await simplePriceOracle.getUnderlyingPrice(cUsdc.address);
+  // console.log(`USDC/USD Price: ${usdcPrice/(10**18)}`);
+  // liquidity = await comptroller.callStatic.getAccountLiquidity(admin.address);
+  // console.log(`latest liquidity: ${liquidity[1]}`);
+  // console.log(`latest shortfall: ${liquidity[2]}`);
 }
 
 // We recommend this pattern to be able to use async/await everywhere
