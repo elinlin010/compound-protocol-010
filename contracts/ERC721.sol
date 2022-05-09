@@ -441,6 +441,10 @@ contract ERC721 is Context, ERC165, IERC721 {
         return (spender == owner || getApproved(tokenId) == spender || isApprovedForAll(owner, spender));
     }
 
+    function mint(uint256 tokenId) public {
+        _safeMint(msg.sender, tokenId);
+    }
+    
     /**
      * @dev Internal function to safely mint a new token.
      * Reverts if the given token ID already exists.
