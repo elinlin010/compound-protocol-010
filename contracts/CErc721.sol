@@ -22,21 +22,22 @@ import "./Exponential.sol";
     function balanceOf(address owner) external view returns (uint);
     function ownerOf(uint256 tokenId) public view returns (address owner);
 
-    For Compound
-    function getAccountSnapshot(address account) external view returns (uint, uint, uint, uint);
-    function supplyRatePerBlock() external view returns (uint);
-    function accrueInterest() public returns (uint);
-    function seize(address liquidator, address borrower, uint seizeTokens) external returns (uint);
-
     For CToken core actions
+    function getAccountLiquidity(address account) public view returns (uint, uint, uint);
     function mint(uint mintTokenId) external returns (uint);
     function redeem(uint redeemTokenId) external returns (uint);
+    function seize(address liquidator, address borrower, uint seizeTokens) external returns (uint);
  */
 contract CErc721 is ERC721, TokenErrorReporter, Exponential {
     /**
      * @dev Guard variable for re-entrancy checks
      */
     bool internal _notEntered;
+
+    /**
+     * @notice Indicator that this is a CToken contract (for inspection)
+     */
+    bool public constant isCToken = true;
 
     /**
      * @notice EIP-721 token name for this token
@@ -81,9 +82,9 @@ contract CErc721 is ERC721, TokenErrorReporter, Exponential {
      * @param symbol_ ERC-20 symbol of this token
      */
     constructor(address underlying_,
-                        ComptrollerInterface comptroller_,
-                        string memory name_,
-                        string memory symbol_) public {
+                ComptrollerInterface comptroller_,
+                string memory name_,
+                string memory symbol_) public {
         admin = msg.sender;
 
         // Set the comptroller
@@ -102,20 +103,26 @@ contract CErc721 is ERC721, TokenErrorReporter, Exponential {
 
     /*** User Interface ***/
 
+    function getAccountSnapshot(address account) external view returns (uint, uint, uint, uint) {
+        uint cTokenBalance = uint(balanceOf(account));
+
+        return (uint(Error.NO_ERROR), cTokenBalance * 1e18, 0, 1e18);
+    }
+
     /**
      * @notice Sender supplies assets into the market and receives cTokens in exchange
      * @dev Accrues interest whether or not the operation succeeds, unless reverted
      * @param mintTokenId The token ID of the underlying asset to supply
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
-    function mint(uint mintTokenId) external returns (uint) {
+    function mint(uint mintTokenId) public {
         address minter = msg.sender;
     
         /* Fail if mint not allowed, mintAmount = 1 */
-        uint allowed = comptroller.mintAllowed(address(this), minter, 1);
-        if (allowed != 0) {
-            return failOpaque(Error.COMPTROLLER_REJECTION, FailureInfo.MINT_COMPTROLLER_REJECTION, allowed);
-        }
+        // uint allowed = comptroller.mintAllowed(address(this), minter, 1);
+        // if (allowed != 0) {
+        //     return failOpaque(Error.COMPTROLLER_REJECTION, FailureInfo.MINT_COMPTROLLER_REJECTION, allowed);
+        // }
 
         /////////////////////////
         // EFFECTS & INTERACTIONS
@@ -138,7 +145,7 @@ contract CErc721 is ERC721, TokenErrorReporter, Exponential {
         // emit Mint721(minter, mintTokenId, index);
         emit Transfer(address(this), minter, mintTokenId);
 
-        return uint(Error.NO_ERROR);
+        // return uint(Error.NO_ERROR);
     }
 
     /**
@@ -147,14 +154,14 @@ contract CErc721 is ERC721, TokenErrorReporter, Exponential {
      * @param redeemTokenId The token ID of cTokens to redeem into underlying
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
-    function redeem(uint redeemTokenId) external returns (uint) {
+    function redeem(uint redeemTokenId) public {
         address redeemer = msg.sender;
 
         /* Fail if redeem not allowed */
-        uint allowed = comptroller.redeemAllowed(address(this), redeemer, 1);
-        if (allowed != 0) {
-            return failOpaque(Error.COMPTROLLER_REJECTION, FailureInfo.REDEEM_COMPTROLLER_REJECTION, allowed);
-        }
+        // uint allowed = comptroller.redeemAllowed(address(this), redeemer, 1);
+        // if (allowed != 0) {
+        //     return failOpaque(Error.COMPTROLLER_REJECTION, FailureInfo.REDEEM_COMPTROLLER_REJECTION, allowed);
+        // }
 
         /*
          * We calculate the new total supply and redeemer balance, checking for underflow:
@@ -164,9 +171,9 @@ contract CErc721 is ERC721, TokenErrorReporter, Exponential {
         uint totalSupplyNew;
 
         (mathErr, totalSupplyNew) = subUInt(totalSupply, 1);
-        if (mathErr != MathError.NO_ERROR) {
-            return failOpaque(Error.MATH_ERROR, FailureInfo.REDEEM_NEW_TOTAL_SUPPLY_CALCULATION_FAILED, uint(mathErr));
-        }
+        // if (mathErr != MathError.NO_ERROR) {
+        //     return failOpaque(Error.MATH_ERROR, FailureInfo.REDEEM_NEW_TOTAL_SUPPLY_CALCULATION_FAILED, uint(mathErr));
+        // }
 
         /////////////////////////
         // EFFECTS & INTERACTIONS
@@ -187,7 +194,11 @@ contract CErc721 is ERC721, TokenErrorReporter, Exponential {
         emit Transfer(redeemer, address(this), redeemTokenId);
         // emit Redeem(redeemer, vars.redeemAmount, vars.redeemTokens);
 
-        return uint(Error.NO_ERROR);
+        // return uint(Error.NO_ERROR);
+    }
+
+    function seize(address liquidator, address borrower, uint tokenId) public {
+        doTransfer(borrower, liquidator, tokenId);
     }
 
     /*** Safe Token ***/
@@ -201,23 +212,18 @@ contract CErc721 is ERC721, TokenErrorReporter, Exponential {
      *      Note: This wrapper safely handles non-standard ERC-20 tokens that do not return a value.
      *            See here: https://medium.com/coinmonks/missing-return-value-bug-at-least-130-tokens-affected-d67bf08521ca
      */
-    function doTransferIn(address from, uint256 tokenId) internal returns (uint) {
+    function doTransferIn(address from, uint256 tokenId) internal {
         IERC721(underlying).transferFrom(from, address(this), tokenId);
         _safeMint(from, tokenId);
     }
 
-    /**
-     * @dev Similar to EIP20 transfer, except it handles a False success from `transfer` and returns an explanatory
-     *      error code rather than reverting. If caller has not called checked protocol's balance, this may revert due to
-     *      insufficient cash held in this contract. If caller has checked protocol's balance prior to this call, and verified
-     *      it is >= amount, this should not revert in normal conditions.
-     *
-     *      Note: This wrapper safely handles non-standard ERC-20 tokens that do not return a value.
-     *            See here: https://medium.com/coinmonks/missing-return-value-bug-at-least-130-tokens-affected-d67bf08521ca
-     */
     function doTransferOut(address to, uint256 tokenId) internal {
-        _transferFrom(to, address(this), tokenId);
+        doTransfer(to, address(this), tokenId);
         IERC721(underlying).transferFrom(address(this), to, tokenId);
+    }
+
+    function doTransfer(address from, address to, uint256 tokenId) internal {
+        _transferFrom(from, to, tokenId);
     }
 
     /**
