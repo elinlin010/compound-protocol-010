@@ -23,7 +23,7 @@ import "./Exponential.sol";
     function ownerOf(uint256 tokenId) public view returns (address owner);
 
     For CToken core actions
-    function getAccountLiquidity(address account) public view returns (uint, uint, uint);
+    function getAccountSnapshot(address account) public view returns (uint, uint, uint);
     function mint(uint mintTokenId) external returns (uint);
     function redeem(uint redeemTokenId) external returns (uint);
     function seize(address liquidator, address borrower, uint seizeTokens) external returns (uint);

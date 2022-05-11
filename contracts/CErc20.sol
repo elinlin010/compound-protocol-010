@@ -1,6 +1,7 @@
 pragma solidity ^0.5.16;
 
 import "./CToken.sol";
+import "./CErc721.sol";
 
 interface CompLike {
   function delegate(address delegatee) external;
@@ -110,6 +111,11 @@ contract CErc20 is CToken, CErc20Interface {
      */
     function liquidateBorrow(address borrower, uint repayAmount, CTokenInterface cTokenCollateral) external returns (uint) {
         (uint err,) = liquidateBorrowInternal(borrower, repayAmount, cTokenCollateral);
+        return err;
+    }
+
+    function liquidate721Borrow(address borrower, uint repayAmount, CErc721 cTokenCollateral, uint tokenId) external returns (uint) {
+        (uint err,) = liquidateBorrow721Internal(borrower, repayAmount, cTokenCollateral, tokenId);
         return err;
     }
 

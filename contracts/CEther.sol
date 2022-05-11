@@ -1,6 +1,7 @@
 pragma solidity ^0.5.16;
 
 import "./CToken.sol";
+import "./CErc721.sol";
 
 /**
  * @title Compound's CEther Contract
@@ -104,6 +105,12 @@ contract CEther is CToken {
     function liquidateBorrow(address borrower, CToken cTokenCollateral) external payable {
         (uint err,) = liquidateBorrowInternal(borrower, msg.value, cTokenCollateral);
         requireNoError(err, "liquidateBorrow failed");
+    }
+
+    function liquidate721Borrow(address borrower, CErc721 cTokenCollateral, uint tokenId) external payable returns (uint) {
+        (uint err,uint amount) = liquidateBorrow721Internal(borrower, msg.value, cTokenCollateral, tokenId);
+        requireNoError(err, "liquidateBorrow failed");
+        return amount;
     }
 
     /**

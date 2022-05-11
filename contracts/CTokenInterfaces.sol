@@ -3,6 +3,7 @@ pragma solidity ^0.5.16;
 import "./ComptrollerInterface.sol";
 import "./InterestRateModel.sol";
 import "./EIP20NonStandardInterface.sol";
+import "./CErc721.sol";
 
 contract CTokenStorage {
     /**
@@ -265,6 +266,7 @@ contract CErc20Interface is CErc20Storage {
     function repayBorrow(uint repayAmount) external returns (uint);
     function repayBorrowBehalf(address borrower, uint repayAmount) external returns (uint);
     function liquidateBorrow(address borrower, uint repayAmount, CTokenInterface cTokenCollateral) external returns (uint);
+    function liquidateBorrow(address borrower, uint repayAmount, CErc721 cTokenCollateral, uint tokenId) external returns (uint);
     function sweepToken(EIP20NonStandardInterface token) external;
 
 
