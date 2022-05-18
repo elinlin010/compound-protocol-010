@@ -43,6 +43,7 @@ const queryBorrowedAccounts = async (symbol, accrualBlockNumber) => {
                             symbol
                             accrualBlockNumber
                             storedBorrowBalance
+                            cTokenBalance
                             market {
                                 id
                                 underlyingAddress
@@ -128,15 +129,18 @@ const setUpMarkets = async() => {
     markets = await queryAllMarkets();
     markets.forEach(market => cTokensContracts[market.symbol] = new web3.eth.Contract(cErc20ABI, market.id));
 }
+
 const queryAllBorrowedAccount = async() => {
+    let i = 0;
     for (id in markets) {
         let lastBlockNumber = 0;
         console.log(`Querying market ${markets[id].symbol}`);
         await queryBorrowedAccounts(markets[id].symbol, lastBlockNumber);
+        if (i++ == 2) return
     }
 }
 
-const liquidateBorrow = async(borrower, shortfall) => {
+const liquidateBorrow = async(borrower) => {
     const cTokenBalance = [];
     for (idx in borrower.tokens) {
         market = borrower.tokens[idx].market;
@@ -145,9 +149,10 @@ const liquidateBorrow = async(borrower, shortfall) => {
     }
 
     cTokenBalance.sort((a, b) => b.balance - a.balance)
+    accountLiquidity = await getAccountLiquidity(borrower.id)
     try {
-        if (cTokenBalance[0].balance > 0)
-            console.log(`liquidate borrower ${borrower.id} with shortfall ${shortfall} and take ${cTokenBalance[0].symbol} as collateral`);
+        if (cTokenBalance[0].balance > 0 && accountLiquidity[2] > 0)
+            console.log(`liquidate borrower ${borrower.id} with shortfall ${accountLiquidity[2]} and take ${cTokenBalance[0].symbol} as collateral`);
     } catch (err) {
         console.log(err);
     }
@@ -165,7 +170,7 @@ const main = async() => {
                 if (accountLiquidity[2] > 0) {
                     await liquidateBorrow(account, accountLiquidity[2])
                 }
-              }, 10);
+              }, 30000);
         });
     }, 5000);
 }
