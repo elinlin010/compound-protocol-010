@@ -136,7 +136,7 @@ const queryAllBorrowedAccount = async() => {
         let lastBlockNumber = 0;
         console.log(`Querying market ${markets[id].symbol}`);
         await queryBorrowedAccounts(markets[id].symbol, lastBlockNumber);
-        // if (i++ == 2) return
+        if (i++ == 2) return
     }
 }
 
@@ -170,7 +170,7 @@ const main = async() => {
                 if (accountLiquidity[2] > 0) {
                     await liquidateBorrow(account, accountLiquidity[2])
                 }
-              }, 30000);
+              }, 1000);
         });
-    }, 5000);
+    }, 30000);
 }
