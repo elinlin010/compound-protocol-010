@@ -136,7 +136,7 @@ const queryAllBorrowedAccount = async() => {
         let lastBlockNumber = 0;
         console.log(`Querying market ${markets[id].symbol}`);
         await queryBorrowedAccounts(markets[id].symbol, lastBlockNumber);
-        if (i++ == 2) return
+        // if (i++ == 2) return
     }
 }
 
